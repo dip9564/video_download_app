@@ -1,3 +1,5 @@
+from webbrowser import Mozilla
+
 import streamlit as st
 import yt_dlp
 import os
@@ -50,7 +52,10 @@ ydl_opts = {
         'format': ydl_format,                # always video+audio if video selected
         'outtmpl': output_file,   # final file format
         'postprocessors': postprocessors,
-        'merge_output_format': format
+        'merge_output_format': format,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0'
+        }
     } 
 
 if st.button("Download"):
