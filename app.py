@@ -52,7 +52,7 @@ ydl_opts = {
         'format': ydl_format,                # always video+audio if video selected
         'outtmpl': output_file,   # final file format
         'postprocessors': postprocessors,
-        'merge_output_format': format,
+        'merge_output_format': format if format == "mp4" else None,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0'
         }
