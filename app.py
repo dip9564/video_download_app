@@ -18,7 +18,7 @@ except:
     st.image(thumbnail)
     st.link_button("Watch on YouTube", url)
 
-format = st.selectbox("choose format:",["mp4"])
+format = st.selectbox("choose format:",["mp4","webm"])
 
 # If mp3 chosen, add postprocessor and skip quality selection
 if format == "mp3":
