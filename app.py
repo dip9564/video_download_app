@@ -89,3 +89,21 @@ if st.button("Download"):
     else:
         st.warning("Please enter a valid URL")
 
+# sidebar 
+with st.sidebar:
+    st.subheader("ℹ️ About this app")
+    st.write("this app is created by 'Dip Mondal'"
+             "It is a demo project for learning streamlit and yt-dlp"
+             )
+    st.write(
+        "This app allows you to download videos from supported platforms like facebook, twitter, instagram."
+        "in different formats and qualities."
+    )
+    st.markdown("### 📌 How to use:")
+    st.write(
+        "1. Paste a video URL\n"
+        "2. Select format and quality\n"
+        "3. Click Download\n"
+        "4. Save the file"
+    )
+    st.warning("⚠️ Large videos may not work on cloud version.")
