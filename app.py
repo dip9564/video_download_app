@@ -52,6 +52,7 @@ ydl_opts = {
         'format': ydl_format,                # always video+audio if video selected
         'outtmpl': output_file,   # final file format
         'postprocessors': postprocessors,
+        'max_filesize': 50 * 1024 * 1024,   # 50 MB limit
         'merge_output_format': format if format == "mp4" else None,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0'
