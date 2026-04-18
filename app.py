@@ -69,6 +69,10 @@ if st.button("Download"):
                     if format == "mp3":
                         file_name = os.path.splitext(file_name)[0] + ".mp3"
 
+            if info.get("filesize") and info["filesize"] > 50 * 1024 * 1024:
+                st.error("❌ File too large (max ~50MB for cloud)")
+                st.stop()
+
             # Read file
             with open(file_name, "rb") as f:
                 file_bytes = f.read()
