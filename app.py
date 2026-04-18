@@ -16,7 +16,7 @@ except:
     st.image(thumbnail)
     st.link_button("Watch on YouTube", url)
 
-format = st.selectbox("choose format:",["mp4","mp3"])
+format = st.selectbox("choose format:",["mp4"])
 
 # If mp3 chosen, add postprocessor and skip quality selection
 if format == "mp3":
@@ -33,15 +33,13 @@ else:
     quality_choice = st.selectbox("Choose video quality:",["Best available","1080p","720p","480p"])
     
     if quality_choice == "Best available":
-        ydl_format = "bestvideo+bestaudio/best"
+        ydl_format = "best"
     elif quality_choice == "1080p":
-        ydl_format = "bestvideo[height<=1080]+bestaudio/best[height<=1080]"
+        ydl_format = "best[height<=1080]"
     elif quality_choice == "720p":
-        ydl_format = "bestvideo[height<=720]+bestaudio/best[height<=720]"
+        ydl_format = "best[height<=720]"
     elif quality_choice == "480p":
-        ydl_format = "bestvideo[height<=480]+bestaudio/best[height<=480]"
-    else : 
-        st.error("this format is not available")
+        ydl_format = "best[height<=480]"
     postprocessors = []
     mime_type = "video/mp4"
 
