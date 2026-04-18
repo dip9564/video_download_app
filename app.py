@@ -4,8 +4,8 @@ import streamlit as st
 import yt_dlp
 import os
 
-st.set_page_config(page_title="YouTube Downloader", page_icon="🎬")
-st.title("🎬 YouTube Video Downloader")
+st.set_page_config(page_title="Video Downloader", page_icon="🎬")
+st.title("🎬 Video Downloader")
 
 url = st.text_input("enter video url")
 
