@@ -1,7 +1,7 @@
 # 🎬 Video Downloader (Streamlit App)
 
 👉 🌐 Live Demo:
-[view live app](https://video-download-app.streamlit.app￼)
+[view live app](https://video-download-app.streamlit.app)
 
 A simple and interactive web app built using Streamlit that allows users to download YouTube videos or audio in different formats and qualities.
 
