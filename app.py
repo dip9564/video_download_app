@@ -60,20 +60,28 @@ ydl_opts = {
 if st.button("Download"):
     if url:
         try:
+            with st.spinner("Checking video..."):
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=False)
+            
+            filesize = info.get("filesize") or info.get("filesize_approx")
+            if filesize:
+                st.info(f"📦 File size: {filesize / (1024*1024):.2f} MB")
+            else:
+                st.warning("⚠️ Unable to determine file size.")
+
+            if filesize and filesize > 70 * 1024 * 1024:
+                st.error("❌ File size is greater than 70MB")
+                st.stop()
+
             with st.spinner("Downloading..."):
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     file_name = ydl.prepare_filename(info)
-                    if format == "mp3":
-                        file_name = os.path.splitext(file_name)[0] + ".mp3"
-
-            if info.get("filesize") and info["filesize"] > 50 * 1024 * 1024:
-                st.error("❌ File too large (max ~50MB for cloud)")
-                st.stop()
 
             # Read file
             with open(file_name, "rb") as f:
-                file_bytes = f.read()
+                file_bytes = f.read(70 * 1024 * 1024)  # read up to 70MB
 
             # Show download button
             st.download_button(
@@ -83,6 +91,9 @@ if st.button("Download"):
                 mime= mime_type
             )
             st.success("Ready to download!")
+
+            if os.path.exists(file_name):
+                os.remove(file_name)
 
         except Exception as e:
             st.error(f"❌ Download error: {e}")
