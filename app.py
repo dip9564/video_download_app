@@ -8,12 +8,15 @@ st.title("🎬 Video Downloader")
 url = st.text_input("enter video url")
 
 if url:
-    if "youtube.com" in url or "youtu.be" in url:
-        st.video(url,width=500)
+    if "https:" in url :
+        if "youtube.com" in url or "youtu.be" in url:
+            st.video(url,width=500)
+        else:
+            st.info("Preview not available for this platform")
+            st.video(url)
+            st.link_button("Open Video", url)
     else:
-        st.info("Preview not available for this platform")
-        st.video(url)
-        st.link_button("Open Video", url)
+        st.error("Please enter a valid video URL")
 
 format = st.selectbox("choose format:",["mp4","webm"])
 
