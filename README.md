@@ -47,12 +47,22 @@ https://video-download-app.streamlit.app
 
 ⸻
 
-⚠️ Limitations
+## ⚠️ Note on Functionality
 
+This project has two versions:
+
+🔹 Local Version (Full Features)
+* Supports downloading from YouTube and other platforms
+* No strict file size limitations
+* Recommended for full functionality
+
+🔹 Deployed Version (Streamlit Cloud)
+* Limited by platform restrictions
+* Large files may fail (50–70MB limit)
 * ❌ YouTube may block downloads on cloud (HTTP 403 error)
 * ❌ MP3 conversion may not work online (FFmpeg not available)
-* ⚠️ Large video downloads may be slow or restricted
-* ⚠️ Works best locally for full functionality
+
+For best experience, run the project locally.
 
 ⸻
 
