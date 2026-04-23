@@ -77,21 +77,21 @@ else:
     quality_choice = st.selectbox("Choose video quality:",quality)
     
     if quality_choice in ["Best available", "4320p"]:
-        ydl_format = "bestvideo+bestaudio/best"
+        ydl_format = "best"
     elif quality_choice in ["2160p","2560p","1920p"]:
-        ydl_format = "bestvideo[height<=2160]+bestaudio/best[height<=2160]"
+        ydl_format = "best[height<=2160]"
     elif quality_choice in ["1440p","1280p","1444p"]:
-        ydl_format = "bestvideo[height<=1440]+bestaudio/best[height<=1440]"
+        ydl_format = "best[height<=1440]"
     elif quality_choice in ["1080p", "960p", "1084p","1136p","1137p"]:
-        ydl_format = "bestvideo[height<=1080]+bestaudio/best[height<=1080]"
+        ydl_format = "best[height<=1080]"
     elif quality_choice in ["720p", "520p", "536p", "718p", "640p", "540p"]:
-        ydl_format = "bestvideo[height<=720]+bestaudio/best[height<=720]"
+        ydl_format = "best[height<=720]"
     elif quality_choice in ["480p"]:
-        ydl_format = "bestvideo[height<=480]+bestaudio/best[height<=480]"
+        ydl_format = "best[height<=480]"
     elif quality_choice in ["360p", "356p"]:
-        ydl_format = "bestvideo[height<=360]+bestaudio/best[height<=360]"
+        ydl_format = "best[height<=360]"
     elif quality_choice in ["240p", "144p"]:
-        ydl_format = "bestvideo[height<=240]+bestaudio/best[height<=240]"
+        ydl_format = "best[height<=240]"
     else : 
         st.error("this format is not downloadable")
     postprocessors = []
