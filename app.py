@@ -109,6 +109,7 @@ ydl_opts = {
             'User-Agent': 'Mozilla/5.0'
         }
     } 
+filesize=None
 if url_check:
     try:
         with st.spinner("Checking fileSize..."):
