@@ -144,7 +144,7 @@ if st.button("Download"):
                 label="Download file",
                 data=file_bytes,
                 file_name=os.path.basename(file_name),
-                mime= mime_type
+                mime= "video/mp4"
             )
             st.success("Ready to download!")
 
