@@ -5,7 +5,40 @@ import os
 st.set_page_config(page_title="Video Downloader", page_icon="🎬")
 st.title("🎬 Video Downloader")
 
+def show_formats(url):
+    """Fetch and display available formats in a clean way"""
+    qualitys=[]
+    with yt_dlp.YoutubeDL() as ydl:
+        info = ydl.extract_info(url, download=False)
+        seen = set()
+        audio_add=True
+        for f in info.get('formats', []):
+            ext = f.get('ext')
+            if ext in ["mhtml", None,"webm"]:  # skip storyboards/thumbnails and webm
+                continue
+
+            flag=True
+            if f.get("height"):
+                res = f"{f['height']}p"
+            else:
+                if audio_add:
+                    res = "mp3"
+                    audio_add=False
+            if res in qualitys:
+                continue
+            key = (res, ext)
+            if key in seen:
+                continue
+            seen.add(key)
+            qualitys.append(res)
+
+    st.info(f"Available formats : {qualitys}")
+
+    return qualitys
+
+url_check=None
 url = st.text_input("enter video url")
+quality=['Best available']
 
 if url:
     if "https:" in url :
@@ -13,14 +46,21 @@ if url:
             st.video(url,width=500)
         else:
             st.info("Preview not available for this platform")
-            st.video(url)
             st.link_button("Open Video", url)
+        url_check=True
     else:
         st.error("Please enter a valid video URL")
 
-format = st.selectbox("choose format:",["mp4","webm"])
+    try:
+        quality.extend( show_formats(url))
+    except Exception as e:
+        url_check = False
 
-# If mp3 chosen, add postprocessor and skip quality selection
+format_ls=["mp4","webm"]
+if "mp3" in quality:
+    format_ls.extend(["mp3"])
+format = st.selectbox("choose format:",format_ls)
+
 if format == "mp3":
     ydl_format = "bestaudio/best"
     postprocessors = [{
@@ -32,16 +72,28 @@ if format == "mp3":
 
 else:
     # Ask user for quality only if video format
-    quality_choice = st.selectbox("Choose video quality:",["Best available","1080p","720p","480p"])
+    if "mp3" in quality:
+        quality.remove("mp3")
+    quality_choice = st.selectbox("Choose video quality:",quality)
     
-    if quality_choice == "Best available":
-        ydl_format = "best"
-    elif quality_choice == "1080p":
-        ydl_format = "best[height<=1080]"
-    elif quality_choice == "720p":
-        ydl_format = "best[height<=720]"
-    elif quality_choice == "480p":
-        ydl_format = "best[height<=480]"
+    if quality_choice in ["Best available", "4320p"]:
+        ydl_format = "bestvideo+bestaudio/best"
+    elif quality_choice in ["2160p","2560p","1920p"]:
+        ydl_format = "bestvideo[height<=2160]+bestaudio/best[height<=2160]"
+    elif quality_choice in ["1440p","1280p","1444p"]:
+        ydl_format = "bestvideo[height<=1440]+bestaudio/best[height<=1440]"
+    elif quality_choice in ["1080p", "960p", "1084p","1136p","1137p"]:
+        ydl_format = "bestvideo[height<=1080]+bestaudio/best[height<=1080]"
+    elif quality_choice in ["720p", "520p", "536p", "718p", "640p", "540p"]:
+        ydl_format = "bestvideo[height<=720]+bestaudio/best[height<=720]"
+    elif quality_choice in ["480p"]:
+        ydl_format = "bestvideo[height<=480]+bestaudio/best[height<=480]"
+    elif quality_choice in ["360p", "356p"]:
+        ydl_format = "bestvideo[height<=360]+bestaudio/best[height<=360]"
+    elif quality_choice in ["240p", "144p"]:
+        ydl_format = "bestvideo[height<=240]+bestaudio/best[height<=240]"
+    else : 
+        st.error("this format is not downloadable")
     postprocessors = []
     mime_type = "video/mp4"
 
@@ -52,25 +104,28 @@ ydl_opts = {
         'format': ydl_format,                # always video+audio if video selected
         'outtmpl': output_file,   # final file format
         'postprocessors': postprocessors,
-        'merge_output_format': format if format == "mp4" else None,
+        'merge_output_format': format ,#if format == "mp4" else None,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0'
         }
     } 
+if url_check:
+    try:
+        with st.spinner("Checking fileSize..."):
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+
+        filesize = info.get("filesize") or info.get("filesize_approx")
+        if filesize:
+            st.info(f"📦 File size: {filesize / (1024*1024):.2f} MB")
+        else:
+            st.warning("⚠️ Unable to determine file size.")
+    except Exception as e:
+        st.warning("⚠️ Unable to determine file size.")
 
 if st.button("Download"):
     if url:
         try:
-            with st.spinner("Checking video..."):
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(url, download=False)
-            
-            filesize = info.get("filesize") or info.get("filesize_approx")
-            if filesize:
-                st.info(f"📦 File size: {filesize / (1024*1024):.2f} MB")
-            else:
-                st.warning("⚠️ Unable to determine file size.")
-
             if filesize and filesize > 70 * 1024 * 1024:
                 st.error("❌ File size is greater than 70MB")
                 st.stop()
