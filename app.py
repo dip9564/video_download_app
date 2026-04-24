@@ -25,6 +25,7 @@ with st.sidebar:
 # main app
 st.set_page_config(page_title="Video Downloader", page_icon="🎬")
 st.title("🎬 Video Downloader")
+st.text("Download videos from supported platforms like facebook, twitter, instagram. For youtube use local version")
 
 def clean_text(text):
     ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
@@ -81,7 +82,7 @@ def show_formats(url):
     return qualitys
 
 url_check=None
-url = st.text_input("enter video url")
+url = st.text_input("Enter video url")
 quality=['Best available']
 
 if url:
@@ -89,7 +90,6 @@ if url:
         if "youtube.com" in url or "youtu.be" in url:
             st.video(url,width=500)
         else:
-            st.info("Preview not available for this platform")
             st.link_button("Open Video", url)
         url_check=True
     else:
@@ -167,13 +167,13 @@ if url_check:
         else:
             st.warning("⚠️ Unable to determine file size.")
     except Exception as e:
-        st.warning("⚠️ Unable to determine file size.")
+        st.warning("⚠️ determine file size not possible.")
 
 if st.button("Download"):
     if url:
         try:
             if filesize and filesize > 70 * 1024 * 1024:
-                st.error("❌ File size is greater than 70MB")
+                st.error("❌ File size < 70MB, use local version for large files.")
                 st.stop()
 
             with st.spinner("Downloading..."):
