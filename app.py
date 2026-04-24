@@ -1,9 +1,53 @@
 import streamlit as st
 import yt_dlp
-import os
+import os, re
 
+# sidebar 
+with st.sidebar:
+    st.subheader("ℹ️ About this app")
+    st.write("This app is created by 'Dip Mondal'.")
+    st.write(
+             "It is a demo project for learning streamlit and yt-dlp"
+             )
+    st.write(
+        "This app allows you to download videos from supported platforms like facebook, twitter, instagram."
+        "In different formats and qualities."
+    )
+    st.markdown("### 📌 How to use:")
+    st.write(
+        "1. Paste a video URL\n"
+        "2. Select format and quality\n"
+        "3. Click Download\n"
+        "4. Save the file"
+    )
+    st.warning("⚠️ Large videos may not work on cloud version. File size less than 100MB")
+
+# main app
 st.set_page_config(page_title="Video Downloader", page_icon="🎬")
 st.title("🎬 Video Downloader")
+
+def clean_text(text):
+    ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+    return ansi_escape.sub('', text)
+
+def progress_hook(d, progress_bar, status_text):
+    
+    if d['status'] == 'downloading':
+        total = d.get('total_bytes') or d.get('total_bytes_estimate')
+        downloaded = d.get('downloaded_bytes', 0)
+
+        if total:
+            progress = downloaded / total
+            progress_bar.progress(min(progress, 1.0))
+
+        speed =clean_text(d.get('_speed_str', ''))
+        eta = clean_text(d.get('_eta_str', ''))
+
+        status_text.text(f"Downloading... {int(progress*100)}% | {speed} | ETA: {eta}")
+
+    elif d['status'] == 'finished':
+        progress_bar.progress(1.0)
+        status_text.text("Processing file...")
 
 def show_formats(url):
     """Fetch and display available formats in a clean way"""
@@ -105,6 +149,7 @@ ydl_opts = {
         'outtmpl': output_file,   # final file format
         'postprocessors': postprocessors,
         'merge_output_format': format if format == "mp4" else None,
+        'progress_hooks': [lambda d: progress_hook(d, progress_bar, status_text)],
         'http_headers': {
             'User-Agent': 'Mozilla/5.0'
         }
@@ -132,6 +177,8 @@ if st.button("Download"):
                 st.stop()
 
             with st.spinner("Downloading..."):
+                progress_bar = st.progress(0)
+                status_text = st.empty()
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     file_name = ydl.prepare_filename(info)
@@ -156,23 +203,3 @@ if st.button("Download"):
             st.error(f"❌ Download error: {e}")
     else:
         st.warning("Please enter a valid URL")
-
-# sidebar 
-with st.sidebar:
-    st.subheader("ℹ️ About this app")
-    st.write("This app is created by 'Dip Mondal'.")
-    st.write(
-             "It is a demo project for learning streamlit and yt-dlp"
-             )
-    st.write(
-        "This app allows you to download videos from supported platforms like facebook, twitter, instagram."
-        "In different formats and qualities."
-    )
-    st.markdown("### 📌 How to use:")
-    st.write(
-        "1. Paste a video URL\n"
-        "2. Select format and quality\n"
-        "3. Click Download\n"
-        "4. Save the file"
-    )
-    st.warning("⚠️ Large videos may not work on cloud version. File size less than 100MB")

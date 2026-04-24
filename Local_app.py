@@ -1,6 +1,6 @@
 import streamlit as st
 import yt_dlp
-import os
+import os ,re
 
 st.set_page_config(page_title="YouTube Downloader", page_icon="🎬")
 st.title("🎬 YouTube Video Downloader")
@@ -23,8 +23,31 @@ with st.sidebar:
     )
 
 # main app
+
+def clean_text(text):
+    ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+    return ansi_escape.sub('', text)
+
+def progress_hook(d, progress_bar, status_text):
+    
+    if d['status'] == 'downloading':
+        total = d.get('total_bytes') or d.get('total_bytes_estimate')
+        downloaded = d.get('downloaded_bytes', 0)
+
+        if total:
+            progress = downloaded / total
+            progress_bar.progress(min(progress, 1.0))
+
+        speed =clean_text(d.get('_speed_str', ''))
+        eta = clean_text(d.get('_eta_str', ''))
+
+        status_text.text(f"Downloading... {int(progress*100)}% | {speed} | ETA: {eta}")
+
+    elif d['status'] == 'finished':
+        progress_bar.progress(1.0)
+        status_text.text("Processing file...")
+
 def show_formats(url):
-    """Fetch and display available formats in a clean way"""
     qualitys=[]
     with yt_dlp.YoutubeDL() as ydl:
         info = ydl.extract_info(url, download=False)
@@ -101,15 +124,15 @@ else:
         ydl_format = "bestvideo[height<=2160]+bestaudio/best[height<=2160]"
     elif quality_choice in ["1440p","1280p","1444p"]:
         ydl_format = "bestvideo[height<=1440]+bestaudio/best[height<=1440]"
-    elif quality_choice in ["1080p", "960p", "1084p","1136p","1137p"]:
+    elif quality_choice in ["1080p", "960p", "1084p","1136p","1137p","1032p"]:
         ydl_format = "bestvideo[height<=1080]+bestaudio/best[height<=1080]"
-    elif quality_choice in ["720p", "520p", "536p", "718p", "640p", "540p"]:
+    elif quality_choice in ["720p", "520p", "536p", "718p", "640p", "540p","688p"]:
         ydl_format = "bestvideo[height<=720]+bestaudio/best[height<=720]"
-    elif quality_choice in ["480p"]:
+    elif quality_choice in ["480p","460p"]:
         ydl_format = "bestvideo[height<=480]+bestaudio/best[height<=480]"
-    elif quality_choice in ["360p", "356p"]:
+    elif quality_choice in ["360p", "356p","344p"]:
         ydl_format = "bestvideo[height<=360]+bestaudio/best[height<=360]"
-    elif quality_choice in ["240p", "144p"]:
+    elif quality_choice in ["240p", "144p","138p","228p"]:
         ydl_format = "bestvideo[height<=240]+bestaudio/best[height<=240]"
     else : 
         st.error("this format is not downloadable")
@@ -123,7 +146,8 @@ ydl_opts = {
         'format': ydl_format,                # always video+audio if video selected
         'outtmpl': output_file,   # final file format
         'postprocessors': postprocessors,
-        'merge_output_format': format
+        'merge_output_format': format,
+        'progress_hooks': [lambda d: progress_hook(d, progress_bar, status_text)],
     } 
 if url_check:
     try:
@@ -143,6 +167,8 @@ if st.button("Download"):
     if url:
         try:
             with st.spinner("Downloading..."):
+                progress_bar = st.progress(0)
+                status_text = st.empty()
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     file_name = ydl.prepare_filename(info)
@@ -161,6 +187,9 @@ if st.button("Download"):
                 mime= mime_type
             )
             st.success("Ready to download!")
+            
+            if os.path.exists(file_name):
+                os.remove(file_name)
 
         except Exception as e:
             st.error(f"❌ Download error: {e}")
