@@ -6,7 +6,7 @@ st.set_page_config(page_title="YouTube Downloader", page_icon="🎬")
 st.title("🎬 YouTube Video Downloader")
 
 with st.sidebar:
-    st.subheader("ℹ️ About this app")
+    st.subheader("ℹ️ About this App")
     st.write("this app is created by **Dip Mondal**"
              "It is a demo project for learning streamlit and yt-dlp"
              )
