@@ -29,7 +29,7 @@ A simple and interactive web app built using Streamlit that allows users to down
 📦 Installation
 
 1. Clone the repository
-git clone https://github.com/your-username/your-repo-name.git
+git clone https://github.com/dip9564/video_download_app.git
 cd your-repo-name
 
 2. Install dependencies
