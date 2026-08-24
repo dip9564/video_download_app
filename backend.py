@@ -1,11 +1,10 @@
-import os
+
 import re
 import shutil
 import tempfile
 from pathlib import Path
 from typing import Literal
 
-from requests import request
 import yt_dlp
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,7 +32,16 @@ class DownloadRequest(BaseModel):
     format: Literal["mp4", "webm", "mp3"] = "mp4"
     quality: str = "Best available"
 
-
+def youtube_options():
+    return {
+        "noplaylist": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["tv", "web_safari"],
+            }
+        },
+    }
+    
 def clean_formats(info: dict) -> list[str]:
     qualities = []
     seen = set()
@@ -108,10 +116,22 @@ def root():
 @app.post("/info")
 def video_info(request: VideoInfoRequest):
     try:
-        with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True}) as ydl:
-            info = ydl.extract_info(str(request.url), download=False)
+        ydl_opts = {
+            "quiet": True,
+            "no_warnings": True,
+            **youtube_options(),
+        }
 
-        filesize = info.get("filesize") or info.get("filesize_approx")
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(
+                str(request.url),
+                download=False,
+            )
+
+        filesize = (
+            info.get("filesize")
+            or info.get("filesize_approx")
+        )
 
         return {
             "title": info.get("title"),
@@ -120,8 +140,12 @@ def video_info(request: VideoInfoRequest):
             "filesize": filesize,
             "qualities": clean_formats(info),
         }
+
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(
+            status_code=400,
+            detail=f"yt-dlp error: {str(exc)}",
+        )
 
 
 @app.post("/download")
@@ -155,12 +179,13 @@ def download_video(request: DownloadRequest):
                 else "video/webm"
             )
 
-        ydl_opts = base_ydl_options(output_template)
-        ydl_opts.update({
+        ydl_opts = {
+            **base_ydl_options(output_template),
+            **youtube_options(),
             "format": ydl_format,
             "postprocessors": postprocessors,
             "merge_output_format": merge_output_format,
-        })
+        }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(str(request.url), download=True)
