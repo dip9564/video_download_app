@@ -20,15 +20,7 @@ page_bg_img = """
 
 st.markdown(page_bg_img, unsafe_allow_html=True)
 
-try:
-    BACKEND_URL = st.secrets["BACKEND_URL"]
-except Exception:
-    BACKEND_URL = DEFAULT_API_URL
-
-API_URL = st.sidebar.text_input(
-    "Backend API URL",
-    value=BACKEND_URL.rstrip("/"),
-)
+API_URL = st.secrets["BACKEND_URL"].rstrip("/")
 
 with st.sidebar:
     st.subheader("ℹ️ About this app")
