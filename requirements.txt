@@ -1,2 +1,6 @@
-streamlit
+fastapi
+uvicorn[standard]
 yt-dlp
+pydantic
+streamlit
+requests
