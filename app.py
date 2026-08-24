@@ -1,6 +1,5 @@
 import requests
 import streamlit as st
-import re
 
 st.set_page_config(page_title="Video Downloader", page_icon="🎬")
 
@@ -127,25 +126,12 @@ if col1.button("Download", disabled=not url):
                 detail = response.text
             st.error(f"❌ Download error: {detail}")
         else:
-            content_disposition = response.headers.get(
-            "content-disposition",
-            ""
-            )
+            content_disposition = response.headers.get("content-disposition", "")
+            filename = f"video.{format_choice}"
 
             if "filename=" in content_disposition:
-                filename = content_disposition.split(
-                    "filename=",
-                    1
-                )[1].strip('"')
-            else:
-                filename = info.get("title", "downloaded_video") if info else "downloaded_video"
+                filename = content_disposition.split("filename=", 1)[1].strip('"')
 
-            filename = re.sub(r'[\\/*?:"<>|]', "", filename)
-
-            # prevent duplicate extension
-            if not filename.lower().endswith(f".{format_choice}"):
-                filename += f".{format_choice}"
-            
             mime_type = (
                 "audio/mpeg"
                 if format_choice == "mp3"
