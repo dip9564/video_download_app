@@ -1,205 +1,162 @@
+import requests
 import streamlit as st
-import yt_dlp
-import os, re
 
-# sidebar 
+st.set_page_config(page_title="Video Downloader", page_icon="🎬")
+
+# Change this after deploying the FastAPI backend.
+DEFAULT_API_URL = "http://localhost:8000"
+
+page_bg_img = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background-image: url("https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fimg.freepik.com%2Fphotos-gratuite%2Fabstrait-numerique-grille-fond-noir_53876-97647.jpg%3Fsemt%3Dais_hybrid%26w%3D740&f=1");
+    background-size: cover;
+}
+[data-testid="stHeader"] {
+    background-color: rgba(0, 0, 0, 0);
+}
+</style>
+"""
+
+st.markdown(page_bg_img, unsafe_allow_html=True)
+
+try:
+    BACKEND_URL = st.secrets["BACKEND_URL"]
+except Exception:
+    BACKEND_URL = DEFAULT_API_URL
+
+API_URL = st.sidebar.text_input(
+    "Backend API URL",
+    value=BACKEND_URL.rstrip("/"),
+)
+
 with st.sidebar:
     st.subheader("ℹ️ About this app")
-    st.write("This app is created by 'Dip Mondal'.")
     st.write(
-             "It is a demo project for learning streamlit and yt-dlp"
-             )
-    st.write(
-        "This app allows you to download videos from supported platforms like facebook, twitter, instagram."
-        "In different formats and qualities."
+        "This demo separates the Streamlit frontend from the FastAPI "
+        "backend that runs yt-dlp."
     )
-    st.markdown("### 📌 How to use:")
-    st.write(
+    st.markdown(
+        "### 📌 How to use:\n"
         "1. Paste a video URL\n"
-        "2. Select format and quality\n"
-        "3. Click Download\n"
-        "4. Save the file"
+        "2. Load available qualities\n"
+        "3. Select format and quality\n"
+        "4. Download"
     )
-    st.warning("⚠️ Large videos may not work on cloud version. File size less than 100MB")
 
-# main app
-st.set_page_config(page_title="Video Downloader", page_icon="🎬")
 st.title("🎬 Video Downloader")
-st.text("Download videos from supported platforms like facebook, twitter, instagram. For youtube use local version")
 
-def clean_text(text):
-    ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
-    return ansi_escape.sub('', text)
+col1, col2 = st.columns([3, 2])
 
-def progress_hook(d, progress_bar, status_text):
-    
-    if d['status'] == 'downloading':
-        total = d.get('total_bytes') or d.get('total_bytes_estimate')
-        downloaded = d.get('downloaded_bytes', 0)
-
-        if total:
-            progress = downloaded / total
-            progress_bar.progress(min(progress, 1.0))
-
-        speed =clean_text(d.get('_speed_str', ''))
-        eta = clean_text(d.get('_eta_str', ''))
-
-        status_text.text(f"Downloading... {int(progress*100)}% | {speed} | ETA: {eta}")
-
-    elif d['status'] == 'finished':
-        progress_bar.progress(1.0)
-        status_text.text("Processing file...")
-
-def show_formats(url):
-    """Fetch and display available formats in a clean way"""
-    qualitys=[]
-    with yt_dlp.YoutubeDL() as ydl:
-        info = ydl.extract_info(url, download=False)
-        seen = set()
-        audio_add=True
-        for f in info.get('formats', []):
-            ext = f.get('ext')
-            if ext in ["mhtml", None,"webm"]:  # skip storyboards/thumbnails and webm
-                continue
-
-            flag=True
-            if f.get("height"):
-                res = f"{f['height']}p"
-            else:
-                if audio_add:
-                    res = "mp3"
-                    audio_add=False
-            if res in qualitys:
-                continue
-            key = (res, ext)
-            if key in seen:
-                continue
-            seen.add(key)
-            qualitys.append(res)
-
-    st.info(f"Available formats : {qualitys}")
-
-    return qualitys
-
-url_check=None
-url = st.text_input("Enter video url")
-quality=['Best available']
+url = col1.text_input("Enter video URL")
 
 if url:
-    if "https:" in url :
+    if url.startswith(("https://", "http://")):
         if "youtube.com" in url or "youtu.be" in url:
-            st.video(url,width=500)
+            col2.video(url)
         else:
-            st.link_button("Open Video", url)
-        url_check=True
+            col2.info("Preview not available for this platform.")
+            col2.link_button("Open Video", url)
     else:
-        st.error("Please enter a valid video URL")
+        col1.error("Please enter a valid video URL.")
 
+if "qualities" not in st.session_state:
+    st.session_state.qualities = ["Best available"]
+if "video_info" not in st.session_state:
+    st.session_state.video_info = None
+if "last_url" not in st.session_state:
+    st.session_state.last_url = ""
+
+if url and url != st.session_state.last_url:
+    st.session_state.qualities = ["Best available"]
+    st.session_state.video_info = None
+
+if col1.button("Load available qualities", disabled=not url):
     try:
-        quality.extend( show_formats(url))
-    except Exception as e:
-        url_check = False
-
-format_ls=["mp4","webm"]
-if "mp3" in quality:
-    format_ls.extend(["mp3"])
-format = st.selectbox("choose format:",format_ls)
-
-if format == "mp3":
-    ydl_format = "bestaudio/best"
-    postprocessors = [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-        'preferredquality': '192',
-    }]
-    mime_type = "audio/mpeg"
-
-else:
-    # Ask user for quality only if video format
-    if "mp3" in quality:
-        quality.remove("mp3")
-    quality_choice = st.selectbox("Choose video quality:",quality)
-    
-    if quality_choice in ["Best available", "4320p"]:
-        ydl_format = "best"
-    elif quality_choice in ["2160p","2560p","1920p"]:
-        ydl_format = "best[height<=2160]"
-    elif quality_choice in ["1440p","1280p","1444p"]:
-        ydl_format = "best[height<=1440]"
-    elif quality_choice in ["1080p", "960p", "1084p","1136p","1137p"]:
-        ydl_format = "best[height<=1080]"
-    elif quality_choice in ["720p", "520p", "536p", "718p", "640p", "540p"]:
-        ydl_format = "best[height<=720]"
-    elif quality_choice in ["480p"]:
-        ydl_format = "best[height<=480]"
-    elif quality_choice in ["360p", "356p"]:
-        ydl_format = "best[height<=360]"
-    elif quality_choice in ["240p", "144p"]:
-        ydl_format = "best[height<=240]"
-    else : 
-        st.error("this format is not downloadable")
-    postprocessors = []
-    mime_type = "video/mp4"
-
-# temp file name
-output_file = "%(title)s.%(ext)s"
-
-ydl_opts = {
-        'format': ydl_format,                # always video+audio if video selected
-        'outtmpl': output_file,   # final file format
-        'postprocessors': postprocessors,
-        'merge_output_format': format if format == "mp4" else None,
-        'progress_hooks': [lambda d: progress_hook(d, progress_bar, status_text)],
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0'
-        }
-    } 
-filesize=None
-if url_check:
-    try:
-        with st.spinner("Checking fileSize..."):
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=False)
-
-        filesize = info.get("filesize") or info.get("filesize_approx")
-        if filesize:
-            st.info(f"📦 File size: {filesize / (1024*1024):.2f} MB")
-        else:
-            st.warning("⚠️ Unable to determine file size.")
-    except Exception as e:
-        st.warning("⚠️ determine file size not possible.")
-
-if st.button("Download"):
-    if url:
-        try:
-            if filesize and filesize > 70 * 1024 * 1024:
-                st.error("❌ File size < 70MB, use local version for large files.")
-                st.stop()
-
-            with st.spinner("Downloading..."):
-                progress_bar = st.progress(0)
-                status_text = st.empty()
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(url, download=True)
-                    file_name = ydl.prepare_filename(info)
-
-            # Read file
-            with open(file_name, "rb") as f:
-                file_bytes = f.read(70 * 1024 * 1024)  # read up to 70MB
-
-            # Show download button
-            st.download_button(
-                label="Download file",
-                data=file_bytes,
-                file_name=os.path.basename(file_name),
-                mime= "video/mp4"
+        with col1.spinner("Checking video information..."):
+            response = requests.post(
+                f"{API_URL}/info",
+                json={"url": url},
+                timeout=60,
             )
-            st.success("Ready to download!")
+            response.raise_for_status()
+            data = response.json()
 
-            if os.path.exists(file_name):
-                os.remove(file_name)
+        qualities = ["Best available"]
+        for quality in data.get("qualities", []):
+            if quality not in qualities:
+                qualities.append(quality)
 
-        except Exception as e:
-            st.error(f"❌ Download error: {e}")
+        st.session_state.qualities = qualities
+        st.session_state.video_info = data
+        st.session_state.last_url = url
+
+    except requests.RequestException as exc:
+        col2.error(f"Backend error: {exc}")
+
+info = st.session_state.video_info
+if info:
+    col2.success(info.get("title", "Video found"))
+
+    filesize = info.get("filesize")
+    if filesize:
+        col2.info(f"📦 Estimated size: {filesize / (1024 * 1024):.2f} MB")
     else:
-        st.warning("Please enter a valid URL")
+        col2.warning("⚠️ Unable to determine file size.")
+
+format_choice = col1.selectbox("Choose format", ["mp4", "webm", "mp3"])
+
+qualities = st.session_state.qualities.copy()
+if format_choice == "mp3":
+    quality_choice = "Best available"
+    col1.info("MP3 uses the best available audio stream.")
+else:
+    video_qualities = [q for q in qualities if q != "mp3"]
+    quality_choice = col1.selectbox("Choose video quality", video_qualities)
+
+if col1.button("Download", disabled=not url):
+    try:
+        with col1.spinner("Downloading from backend... This may take a while."):
+            response = requests.post(
+                f"{API_URL}/download",
+                json={
+                    "url": url,
+                    "format": format_choice,
+                    "quality": quality_choice,
+                },
+                timeout=600,
+            )
+
+        if not response.ok:
+            try:
+                detail = response.json().get("detail", response.text)
+            except Exception:
+                detail = response.text
+            st.error(f"❌ Download error: {detail}")
+        else:
+            content_disposition = response.headers.get("content-disposition", "")
+            filename = f"video.{format_choice}"
+
+            if "filename=" in content_disposition:
+                filename = content_disposition.split("filename=", 1)[1].strip('"')
+
+            mime_type = (
+                "audio/mpeg"
+                if format_choice == "mp3"
+                else "video/mp4"
+                if format_choice == "mp4"
+                else "video/webm"
+            )
+
+            col1.download_button(
+                label="Save downloaded file",
+                data=response.content,
+                file_name=filename,
+                mime=mime_type,
+            )
+            col1.success("Ready to save!")
+
+    except requests.Timeout:
+        col2.error("❌ The backend timed out while downloading the video.")
+    except requests.RequestException as exc:
+        col2.error(f"❌ Backend connection error: {exc}")
