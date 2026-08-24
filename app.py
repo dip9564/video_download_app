@@ -87,9 +87,10 @@ if col1.button("Load available qualities", disabled=not url):
         col2.error(f"Backend error: {exc}")
 
 info = st.session_state.video_info
-file_name=info.get("title")
+file_name="video"
 
 if info:
+    file_name=info.get("title")
     col2.success(info.get("title", "Video found"))
 
     filesize = info.get("filesize")
