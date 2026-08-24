@@ -87,6 +87,8 @@ if col1.button("Load available qualities", disabled=not url):
         col2.error(f"Backend error: {exc}")
 
 info = st.session_state.video_info
+file_name=info.get("title")
+
 if info:
     col2.success(info.get("title", "Video found"))
 
@@ -143,7 +145,7 @@ if col1.button("Download", disabled=not url):
             col1.download_button(
                 label="Save downloaded file",
                 data=response.content,
-                file_name=filename,
+                file_name=file_name,
                 mime=mime_type,
             )
             col1.success("Ready to save!")
